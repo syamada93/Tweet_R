@@ -178,7 +178,7 @@ output$distPlot <-  renderPlot({
                 geom_area(col="black") +
                 # geom_text(data=TDC2,aes(y=total+10,label=format(JTime,"%H"),fill=NULL),col="red") +
                 labs(x="",y="",fill="") +
-                scale_x_datetime(date_breaks="1 Hour",date_labels = "%H時") +
+                scale_x_datetime(date_breaks="1 hours",date_labels = "%H時") +
                 scale_y_continuous(breaks = seq(0,10000000,100),limits = c(0,max(TDC$total+10))) +
                 # ggtitle("雨ツイート 更新中") +
                 theme(legend.position = "bottom") +

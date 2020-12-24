@@ -87,12 +87,9 @@ ui <- fluidPage(
 # Define server logic required to draw a histogram
 server <- function(input, output) {
     
-<<<<<<< HEAD
+
     refreshPlot <- reactiveTimer(intervalMs = 12000)
-=======
-    refreshPlot <- reactiveTimer(intervalMs = 5000)
->>>>>>> 5b0f3174bc34a5c629954789aabcaf75419ef139
-    
+
     TDC <- data.frame()
     dc=""
     wd="雨"
@@ -113,11 +110,7 @@ output$distPlot <-  renderPlot({
             td <- search_tweets(wd,lang = "ja",n = 1000,include_rts = T)
             
             if(nrow(td)==0){
-<<<<<<< HEAD
                 Sys.sleep(60)
-=======
-                Sys.sleep(5)
->>>>>>> 5b0f3174bc34a5c629954789aabcaf75419ef139
                 next
             }
             

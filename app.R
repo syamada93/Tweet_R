@@ -109,11 +109,7 @@ output$distPlot <-  renderPlot({
     refreshPlot()
             td <- search_tweets(wd,lang = "ja",n = 1000,include_rts = T)
             
-            if(nrow(td)==0){
-                Sys.sleep(60)
-                next
-            }
-            
+            if(nrow(td)!=0)
             tds <-
                 td %>%
                 mutate(JTime=as.POSIXct(format(created_at, tz="Japan"))) %>%

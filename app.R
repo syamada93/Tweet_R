@@ -86,6 +86,13 @@ ui <- fluidPage(
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
+    
+    refreshPlot <- reactiveTimer(intervalMs = 12000)
+    
+    TDC <- data.frame()
+    dc=""
+    wd="雨"
+    
 output$distPlot <-  renderPlot({
         # # generate bins based on input$bins from ui.R
         # x    <- faithful[, 2]
@@ -94,16 +101,15 @@ output$distPlot <-  renderPlot({
         # # draw the histogram with the specified number of bins
         # hist(x, breaks = bins, col = 'darkgray', border = 'white')
         
-        TDC <- data.frame()
-        dc=""
-        wd="雨"
-        
-        repeat{
-            if(format(Sys.time(),"%S")=="00"){
+    
+    
+        # repeat{
+        #     if(format(Sys.time(),"%S")=="00"){
+    refreshPlot()
             td <- search_tweets(wd,lang = "ja",n = 1000,include_rts = T)
             
             if(nrow(td)==0){
-                Sys.sleep(10)
+                Sys.sleep(60)
                 next
             }
             
@@ -159,6 +165,9 @@ output$distPlot <-  renderPlot({
                 ungroup() %>%
                 mutate(JTime=as.POSIXct(paste(Year,Month,Day,Hour,Minute),format="%Y %m %d %H %M"))
             
+            dc <- sort(unique(c(tds$status_id,dc)),decreasing = T)
+            dc <- dc[1:min(length(dc),10000)]
+            
             p <-
                 TDC %>%
                 filter(total>0) %>%
@@ -168,7 +177,7 @@ output$distPlot <-  renderPlot({
                 geom_area(col="black") +
                 # geom_text(data=TDC2,aes(y=total+10,label=format(JTime,"%H"),fill=NULL),col="red") +
                 labs(x="",y="",fill="") +
-                scale_x_datetime(date_breaks="1 day",date_labels = "%d日") +
+                scale_x_datetime(date_breaks="1 Hour",date_labels = "%H時") +
                 scale_y_continuous(breaks = seq(0,10000000,100),limits = c(0,max(TDC$total+10))) +
                 # ggtitle("雨ツイート 更新中") +
                 theme(legend.position = "bottom") +
@@ -177,16 +186,8 @@ output$distPlot <-  renderPlot({
             
             plot(p)
             
-            dc <- sort(unique(c(tds$status_id,dc)),decreasing = T)
-            dc <- dc[1:min(length(dc),10000)]
-            if(length(list.files("Tweet_data"))>=5)
-                break
-            }
-        }
-        
-        
-        
-        
+        #     }
+        # }
     })
 }
 

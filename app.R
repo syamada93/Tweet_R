@@ -103,6 +103,12 @@ server <- function(input, output) {
  observe({
     wd=WD()
     refreshPlot()
+    if(file.exists("TDC.csv"))
+        TDC <- fread("TDC.csv") %>%
+        data.frame()
+    if(file.exists("dc.txt"))
+        dc <- fread("dc.txt")$V1
+    
     td <- search_tweets(wd,lang = "ja",n = 1000,include_rts = T)
     
     if(nrow(td)==0)
@@ -161,9 +167,11 @@ server <- function(input, output) {
         mutate(JTime=as.POSIXct(paste(Year,Month,Day,Hour,Minute),format="%Y %m %d %H %M")) %>%
         filter(JTime<Sys.time())
     
+    write.csv(TDC,"TDC.csv",row.names = F)
     dc <- sort(unique(c(tds$status_id,dc)),decreasing = T)
     dc <- dc[1:min(length(dc),10000)]
- 
+    write(dc,"dc.txt")
+    
     output$Hline <-  renderPlot({
         Comp <- 
             # data.frame(JTime=(max(TDC$JTime)-60*60):(max(TDC$JTime))) %>%

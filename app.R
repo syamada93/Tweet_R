@@ -193,6 +193,8 @@ server <- function(input, output) {
             plot(p)
     })
     
+    print(list.files("Tweet_data"))
+    
     output$Dline <-  renderPlot({
         TDCH <-
             TDC %>%

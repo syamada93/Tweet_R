@@ -73,7 +73,8 @@ ui <- fluidPage(
            textInput("wd",
                      "抽出する単語",
                      "雨"),
-           submitButton("抽出開始")
+           actionButton("button1","抽出開始")
+           # submitButton()
         ),
 
         # Show a plot of the generated distribution
@@ -96,8 +97,10 @@ server <- function(input, output) {
     dc=""
     wd="雨"
     
-    WD <- reactive({
-        input$wd
+    observeEvent(input$button1, {
+        WD <- reactive({
+            input$wd
+        })
         if(file.exists("TDC.csv"))
             file.remove("TDC.csv")
         if(file.exists("dc.txt"))

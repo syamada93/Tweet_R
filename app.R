@@ -98,6 +98,10 @@ server <- function(input, output) {
     
     WD <- reactive({
         input$wd
+        if(file.exists("TDC.csv"))
+            file.remove("TDC.csv")
+        if(file.exists("dc.txt"))
+            file.remove("dc.txt")
     })
     
  observe({
@@ -172,6 +176,8 @@ server <- function(input, output) {
     dc <- dc[1:min(length(dc),10000)]
     write(dc,"dc.txt")
     
+    print(list.files("Tweet_data"))
+    
     output$Hline <-  renderPlot({
         Comp <- 
             # data.frame(JTime=(max(TDC$JTime)-60*60):(max(TDC$JTime))) %>%
@@ -200,8 +206,6 @@ server <- function(input, output) {
             
             plot(p)
     })
-    
-    print(list.files("Tweet_data"))
     
     output$Dline <-  renderPlot({
         TDCH <-

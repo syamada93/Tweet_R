@@ -97,15 +97,15 @@ server <- function(input, output) {
     dc=""
     wd="雨"
     
-    WD <- reactive({
+    WD <- eventReactive(input$button1,{
         input$wd
     })
-    # observeEvent(input$button1, {
-    #     if(file.exists("TDC.csv"))
-    #         file.remove("TDC.csv")
-    #     if(file.exists("dc.txt"))
-    #         file.remove("dc.txt")
-    # })
+    observeEvent(input$button1, {
+        if(file.exists("TDC.csv"))
+            file.remove("TDC.csv")
+        if(file.exists("dc.txt"))
+            file.remove("dc.txt")
+    })
     
  observe({
     wd=WD()

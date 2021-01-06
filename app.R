@@ -275,8 +275,8 @@ server <- function(input, output) {
             filter(JTime<Sys.time())
         
         Comp <- 
-            data.frame(JTime=rep(seq(max(TDCH$JTime)-24*60*60,max(TDCH$JTime),60*60),each=2),
-                       RT=rep(c(F,T),25))
+            data.frame(JTime=rep(seq(max(TDCH$JTime)-7*24*60*60,max(TDCH$JTime),60*60),each=2),
+                       RT=rep(c(F,T),24*7+1))
         TDC2 <-
             Comp %>%
             left_join(TDCH) %>%
@@ -295,11 +295,13 @@ server <- function(input, output) {
             geom_area(col="black") +
             # geom_text(data=TDC2,aes(y=total+10,label=format(JTime,"%H"),fill=NULL),col="red") +
             labs(x="",y="",fill="") +
-            scale_x_datetime(date_breaks="1 hours",date_labels = "%H時") +
+            scale_x_datetime(date_breaks="6 hours",date_labels = "%d日%H時",
+                             date_minor_break="1 hours") +
             scale_y_continuous(breaks = seq(0,10000000,10^keta),limits = c(0,max(TDC2$total)+10^(keta-1))) +
             ggtitle(paste0(min(TDC2$JTime),"～",max(TDC2$JTime))) +
             theme(legend.position = "bottom") +
             theme(text = element_text(size=30)) +
+            theme(axis.text.x =  element_text(size=20,angle = 90,vjust = 0.5)) +
             theme(axis.title.x = element_blank())
         
         plot(p)

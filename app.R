@@ -80,6 +80,7 @@ ui <- fluidPage(
         # Show a plot of the generated distribution
         mainPanel(
            plotOutput("Hline"),
+           plotOutput("Dline0"),
            plotOutput("Dline"),
            plotOutput("Mline"),
            width = 12
@@ -153,10 +154,11 @@ server <- function(input, output) {
     tdc <-
         tds %>%
         filter(!status_id %in% dc) %>%
-        count(Year,Month,Day,Hour,Minute,RT=is_retweet) %>%
+        count(Year,Month,Day,Hour,M,Minute,RT=is_retweet) %>%
         mutate(RT=as.logical(RT)) %>%
         complete(Year,Month,Day,Hour,Minute,RT,fill=list(n=0)) %>%
-        group_by(Year,Month,Day,Hour,Minute) %>%
+        mutate(M=floor(Minute/10)*10) %>%
+        group_by(Year,Month,Day,Hour,M,Minute) %>%
         mutate(total=sum(n)) %>%
         ungroup() %>%
         mutate(JTime=as.POSIXct(paste(Year,Month,Day,Hour,Minute),format="%Y %m %d %H %M"))
@@ -164,18 +166,18 @@ server <- function(input, output) {
     TDC <-
         TDC %>%
         rbind(tdc) %>%
-        group_by(Year,Month,Day,Hour,Minute,RT) %>%
+        group_by(Year,Month,Day,Hour,M,Minute,RT) %>%
         summarise(n=sum(n)) %>%
         ungroup() %>%
         complete(Year,Month,Day,Hour,Minute,RT,fill=list(n=0)) %>%
-        group_by(Year,Month,Day,Hour,Minute) %>%
+        group_by(Year,Month,Day,Hour,M,Minute) %>%
         mutate(total=sum(n)) %>%
         ungroup() %>%
         mutate(JTime=as.POSIXct(paste(Year,Month,Day,Hour,Minute),format="%Y %m %d %H %M")) %>%
         filter(JTime<Sys.time())
     
     write.csv(TDC,"TDC.csv",row.names = F)
-    dc <- sort(unique(c(tds$status_id,dc)),decreasing = T)
+    dc <- unique(c(tds$status_id,sort(dc,decreasing = T)))
     dc <- dc[1:min(length(dc),10000)]
     write(dc,"dc.txt")
     
@@ -189,7 +191,12 @@ server <- function(input, output) {
         TDC2 <-
             Comp %>%
             left_join(TDC) %>%
-            mutate(n=ifelse(is.na(n),0,n))
+            mutate(n=ifelse(is.na(n),0,n)) %>%
+            mutate(total=ifelse(is.na(total),0,total))
+        
+        keta <-nchar(max(TDC2$total))-1
+        if(floor(max(TDC2$total)/(10^keta))<3)
+            keta <- keta-1
         
             p <-
                 TDC2 %>%
@@ -200,7 +207,7 @@ server <- function(input, output) {
                 # geom_text(data=TDC2,aes(y=total+10,label=format(JTime,"%H"),fill=NULL),col="red") +
                 labs(x="",y="",fill="") +
                 scale_x_datetime(date_breaks="1 min",date_labels = "%H:%M") +
-                scale_y_continuous(breaks = seq(0,10000000,100),limits = c(0,max(TDC2$total+10))) +
+                scale_y_continuous(breaks = seq(0,10000000,10^keta),limits = c(0,max(TDC2$total)+10^(keta-1))) +
                 ggtitle(paste0(min(TDC2$JTime),"～",max(TDC2$JTime))) +
                 theme(legend.position = "bottom") +
                 theme(text = element_text(size=30)) +
@@ -208,6 +215,50 @@ server <- function(input, output) {
                 theme(axis.title.x = element_blank())
             
             plot(p)
+    })
+    
+    output$Dline0 <-  renderPlot({
+        TDCH <-
+            TDC %>%
+            group_by(Year,Month,Day,Hour,M,RT) %>%
+            summarise(n=sum(n)) %>%
+            ungroup() %>%
+            complete(Year,Month,Day,Hour,M,RT,fill=list(n=0)) %>%
+            group_by(Year,Month,Day,Hour,M) %>%
+            mutate(total=sum(n)) %>%
+            ungroup() %>%
+            mutate(JTime=as.POSIXct(paste(Year,Month,Day,Hour,M),format="%Y %m %d %H %M")) %>%
+            filter(JTime<Sys.time())
+        
+        Comp <- 
+            data.frame(JTime=rep(seq(max(TDCH$JTime)-24*60*60,max(TDCH$JTime),60*10),each=2),
+                       RT=rep(c(F,T),24*6+1))
+        TDC2 <-
+            Comp %>%
+            left_join(TDCH) %>%
+            mutate(n=ifelse(is.na(n),0,n)) %>%
+            mutate(total=ifelse(is.na(total),0,total))
+        
+        keta <-nchar(max(TDC2$total))-1
+        if(floor(max(TDC2$total)/(10^keta))<3)
+            keta <- keta-1
+        
+        p <-
+            TDC2 %>%
+            # filter(total>0) %>%
+            mutate(RTs=factor(RT,labels = c("オリジナルツイート","リツイート"))) %>%
+            ggplot(aes(x=JTime,y=n,fill=reorder(RTs,-RT))) +
+            geom_area(col="black") +
+            # geom_text(data=TDC2,aes(y=total+10,label=format(JTime,"%H"),fill=NULL),col="red") +
+            labs(x="",y="",fill="") +
+            scale_x_datetime(date_breaks="1 hours",date_labels = "%H時") +
+            scale_y_continuous(breaks = seq(0,10000000,10^keta),limits = c(0,max(TDC2$total)+10^(keta-1))) +
+            ggtitle(paste0(min(TDC2$JTime),"～",max(TDC2$JTime))) +
+            theme(legend.position = "bottom") +
+            theme(text = element_text(size=30)) +
+            theme(axis.title.x = element_blank())
+        
+        plot(p)
     })
     
     output$Dline <-  renderPlot({
@@ -229,7 +280,12 @@ server <- function(input, output) {
         TDC2 <-
             Comp %>%
             left_join(TDCH) %>%
-            mutate(n=ifelse(is.na(n),0,n))
+            mutate(n=ifelse(is.na(n),0,n)) %>%
+            mutate(total=ifelse(is.na(total),0,total))
+        
+        keta <-nchar(max(TDC2$total))-1
+        if(floor(max(TDC2$total)/(10^keta))<3)
+            keta <- keta-1
         
         p <-
             TDC2 %>%
@@ -240,7 +296,7 @@ server <- function(input, output) {
             # geom_text(data=TDC2,aes(y=total+10,label=format(JTime,"%H"),fill=NULL),col="red") +
             labs(x="",y="",fill="") +
             scale_x_datetime(date_breaks="1 hours",date_labels = "%H時") +
-            scale_y_continuous(breaks = seq(0,10000000,100),limits = c(0,max(TDC2$total+10))) +
+            scale_y_continuous(breaks = seq(0,10000000,10^keta),limits = c(0,max(TDC2$total)+10^(keta-1))) +
             ggtitle(paste0(min(TDC2$JTime),"～",max(TDC2$JTime))) +
             theme(legend.position = "bottom") +
             theme(text = element_text(size=30)) +
@@ -268,7 +324,12 @@ server <- function(input, output) {
         TDC2 <-
             Comp %>%
             left_join(TDCM) %>%
-            mutate(n=ifelse(is.na(n),0,n))
+            mutate(n=ifelse(is.na(n),0,n)) %>%
+            mutate(total=ifelse(is.na(total),0,total))
+        
+        keta <-nchar(max(TDC2$total))-1
+        if(floor(max(TDC2$total)/(10^keta))<3)
+            keta <- keta-1
         
         p <-
             TDC2 %>%
@@ -279,7 +340,7 @@ server <- function(input, output) {
             # geom_text(data=TDC2,aes(y=total+10,label=format(JTime,"%H"),fill=NULL),col="red") +
             labs(x="",y="",fill="") +
             scale_x_datetime(date_breaks="1 days",date_labels = "%d日") +
-            scale_y_continuous(breaks = seq(0,10000000,100),limits = c(0,max(TDC2$total+10))) +
+            scale_y_continuous(breaks = seq(0,10000000,10^keta),limits = c(0,max(TDC2$total)+10^(keta-1))) +
             ggtitle(paste0(min(TDC2$JTime),"～",max(TDC2$JTime))) +
             theme(legend.position = "bottom") +
             theme(text = element_text(size=30)) +

@@ -195,7 +195,7 @@ server <- function(input, output) {
             mutate(total=ifelse(is.na(total),0,total))
         
         keta <-nchar(max(TDC2$total))-1
-        if(floor(max(TDC2$total)/(10^keta))<3)
+        if(floor(max(TDC2$total)/(10^keta))<2)
             keta <- keta-1
         
             p <-
@@ -240,7 +240,7 @@ server <- function(input, output) {
             mutate(total=ifelse(is.na(total),0,total))
         
         keta <-nchar(max(TDC2$total))-1
-        if(floor(max(TDC2$total)/(10^keta))<3)
+        if(floor(max(TDC2$total)/(10^keta))<2)
             keta <- keta-1
         
         p <-
@@ -284,7 +284,7 @@ server <- function(input, output) {
             mutate(total=ifelse(is.na(total),0,total))
         
         keta <-nchar(max(TDC2$total))-1
-        if(floor(max(TDC2$total)/(10^keta))<3)
+        if(floor(max(TDC2$total)/(10^keta))<2)
             keta <- keta-1
         
         p <-
@@ -328,7 +328,7 @@ server <- function(input, output) {
             mutate(total=ifelse(is.na(total),0,total))
         
         keta <-nchar(max(TDC2$total))-1
-        if(floor(max(TDC2$total)/(10^keta))<3)
+        if(floor(max(TDC2$total)/(10^keta))<2)
             keta <- keta-1
         
         p <-

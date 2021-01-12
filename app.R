@@ -275,7 +275,7 @@ server <- function(input, output) {
             filter(JTime<Sys.time())
         
         Comp <- 
-            data.frame(JTime=rep(seq(max(TDCH$JTime)-7*24*60*60,max(TDCH$JTime),60*60),each=2),
+            data.frame(JTime=rep(seq(max(TDCH$JTime)-24*60*60,max(TDCH$JTime),60*60),each=2),
                        RT=rep(c(F,T),24+1))
         TDC2 <-
             Comp %>%

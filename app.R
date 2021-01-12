@@ -295,7 +295,7 @@ server <- function(input, output) {
             geom_area(col="black") +
             # geom_text(data=TDC2,aes(y=total+10,label=format(JTime,"%H"),fill=NULL),col="red") +
             labs(x="",y="",fill="") +
-            scale_x_datetime(date_breaks="6 hours",date_labels = "%d日%H時",
+            scale_x_datetime(date_breaks="1 hours",date_labels = "%H時",
                              date_minor_break="1 hours") +
             scale_y_continuous(breaks = seq(0,10000000,10^keta),limits = c(0,max(TDC2$total)+10^(keta-1))) +
             ggtitle(paste0(min(TDC2$JTime),"～",max(TDC2$JTime))) +

@@ -91,7 +91,7 @@ ui <- fluidPage(
 # Define server logic required to draw a histogram
 server <- function(input, output) {
     
-
+    refreshPlot0 <- reactiveTimer(intervalMs = 1)
     refreshPlot <- reactiveTimer(intervalMs = 60000)
 
     TDC <- data.frame()
@@ -110,13 +110,17 @@ server <- function(input, output) {
     
  observe({
     wd=WD()
-    refreshPlot()
     if(file.exists("TDC.csv"))
         TDC <- fread("TDC.csv") %>%
         data.frame()
     if(file.exists("dc.txt"))
         dc <- fread("dc.txt")$V1
     
+    refreshPlot0()
+    # print(Sys.time())
+    if(format(Sys.time(),"%S")!="00")
+        return()
+    refreshPlot()
     td <- search_tweets(wd,lang = "ja",n = 1000,include_rts = T)
     
     if(nrow(td)==0)
@@ -181,7 +185,7 @@ server <- function(input, output) {
     dc <- dc[1:min(length(dc),10000)]
     write(dc,"dc.txt")
     
-    print(list.files("Tweet_data"))
+    # print(list.files("Tweet_data"))
     
     output$Hline <-  renderPlot({
         Comp <- 

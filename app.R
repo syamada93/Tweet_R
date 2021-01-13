@@ -118,9 +118,9 @@ server <- function(input, output) {
     
     refreshPlot0()
     # print(Sys.time())
-    if(format(Sys.time(),"%S")!="00")
+    if(format(Sys.time(),"%S")!="50")
         return()
-    refreshPlot()
+    # refreshPlot()
     td <- search_tweets(wd,lang = "ja",n = 1000,include_rts = T)#,retryonratelimit = T)
     
     if(nrow(td)==0)

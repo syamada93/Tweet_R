@@ -92,11 +92,11 @@ ui <- fluidPage(
 server <- function(input, output) {
     
     refreshPlot0 <- reactiveTimer(intervalMs = 1)
-    refreshPlot <- reactiveTimer(intervalMs = 60000)
+    # refreshPlot <- reactiveTimer(intervalMs = 60000)
 
     TDC <- data.frame()
     dc=""
-    wd="雨"
+    wd="コロナ"
     
     WD <- eventReactive(input$button1,{
         input$wd
@@ -115,7 +115,7 @@ server <- function(input, output) {
         TDC <- fread("TDC.csv") %>%
         data.frame()
     if(file.exists("dc.txt"))
-        dc <- fread("dc.txt")$V1
+        dc <- as.character(fread("dc.txt")$V1)
     # print(Sys.time())
     if(as.numeric(format(Sys.time(),"%S"))<50)
         return()
@@ -154,6 +154,9 @@ server <- function(input, output) {
     print(paste(min(tds$JTime),max(tds$JTime),nrow(tds)))
     
     write_as_csv(tds,paste0("Tweet_data/Tweet_",wd,"_",day,"_",mid,".csv"),fileEncoding = "CP932")
+    
+    # print(length(dc))
+    # print(nrow(tds %>% filter(!status_id %in% dc)))
  
     tdc <-
         tds %>%

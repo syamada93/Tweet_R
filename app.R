@@ -110,16 +110,16 @@ server <- function(input, output) {
     
  observe({
     wd=WD()
+    refreshPlot0()
     if(file.exists("TDC.csv"))
         TDC <- fread("TDC.csv") %>%
         data.frame()
     if(file.exists("dc.txt"))
         dc <- fread("dc.txt")$V1
-    
-    refreshPlot0()
     # print(Sys.time())
-    if(format(Sys.time(),"%S")!="50")
+    if(as.numeric(format(Sys.time(),"%S"))<50)
         return()
+    print(Sys.time())
     # refreshPlot()
     td <- search_tweets(wd,lang = "ja",n = 1000,include_rts = T)#,retryonratelimit = T)
     
@@ -158,11 +158,11 @@ server <- function(input, output) {
     tdc <-
         tds %>%
         filter(!status_id %in% dc) %>%
-        count(Year,Month,Day,Hour,M,Minute,RT=is_retweet) %>%
+        count(Year,Month,Day,Hour,Minute,RT=is_retweet) %>%
         mutate(RT=as.logical(RT)) %>%
         complete(Year,Month,Day,Hour,Minute,RT,fill=list(n=0)) %>%
-        mutate(M=floor(Minute/10)*10) %>%
-        group_by(Year,Month,Day,Hour,M,Minute) %>%
+        # mutate(M=floor(Minute/10)*10) %>%
+        group_by(Year,Month,Day,Hour,Minute) %>%
         mutate(total=sum(n)) %>%
         ungroup() %>%
         mutate(JTime=as.POSIXct(paste(Year,Month,Day,Hour,Minute),format="%Y %m %d %H %M"))
@@ -170,19 +170,21 @@ server <- function(input, output) {
     TDC <-
         TDC %>%
         rbind(tdc) %>%
-        group_by(Year,Month,Day,Hour,M,Minute,RT) %>%
+        group_by(Year,Month,Day,Hour,Minute,RT) %>%
         summarise(n=sum(n)) %>%
         ungroup() %>%
         complete(Year,Month,Day,Hour,Minute,RT,fill=list(n=0)) %>%
-        group_by(Year,Month,Day,Hour,M,Minute) %>%
+        group_by(Year,Month,Day,Hour,Minute) %>%
         mutate(total=sum(n)) %>%
         ungroup() %>%
         mutate(JTime=as.POSIXct(paste(Year,Month,Day,Hour,Minute),format="%Y %m %d %H %M")) %>%
         filter(JTime<Sys.time())
     
+    print(head(TDC %>% arrange(desc(JTime))))
+    
     write.csv(TDC,"TDC.csv",row.names = F)
     dc <- unique(c(tds$status_id,sort(dc,decreasing = T)))
-    dc <- dc[1:min(length(dc),10000)]
+    dc <- dc[1:min(length(dc),3000)]
     write(dc,"dc.txt")
     
     # print(list.files("Tweet_data"))
@@ -224,6 +226,7 @@ server <- function(input, output) {
     output$Dline0 <-  renderPlot({
         TDCH <-
             TDC %>%
+            mutate(M=floor(Minute/10)*10) %>%
             group_by(Year,Month,Day,Hour,M,RT) %>%
             summarise(n=sum(n)) %>%
             ungroup() %>%

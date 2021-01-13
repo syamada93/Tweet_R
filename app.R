@@ -195,7 +195,7 @@ server <- function(input, output) {
     output$Hline <-  renderPlot({
         Comp <- 
             # data.frame(JTime=(max(TDC$JTime)-60*60):(max(TDC$JTime))) %>%
-            data.frame(JTime=rep(seq(max(TDC$JTime)-60*60,max(TDC$JTime),60),each=2),
+            data.frame(JTime=rep(seq(max(TDC$JTime)-60*61,max(TDC$JTime)-60,60),each=2),
                        RT=rep(c(F,T),61))
         TDC2 <-
             Comp %>%

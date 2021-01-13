@@ -121,7 +121,7 @@ server <- function(input, output) {
     if(format(Sys.time(),"%S")!="00")
         return()
     refreshPlot()
-    td <- search_tweets(wd,lang = "ja",n = 1000,include_rts = T)
+    td <- search_tweets(wd,lang = "ja",n = 1000,include_rts = T)#,retryonratelimit = T)
     
     if(nrow(td)==0)
         return()

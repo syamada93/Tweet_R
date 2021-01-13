@@ -204,8 +204,11 @@ server <- function(input, output) {
             mutate(total=ifelse(is.na(total),0,total))
         
         keta <-nchar(max(TDC2$total))-1
+        
         if(floor(max(TDC2$total)/(10^keta))<2)
             keta <- keta-1
+        
+       ml=floor(max(TDC2$total)/(10^keta))*(10^keta)
         
             p <-
                 TDC2 %>%
@@ -213,6 +216,7 @@ server <- function(input, output) {
                 mutate(RTs=factor(RT,labels = c("オリジナルツイート","リツイート"))) %>%
                 ggplot(aes(x=JTime,y=n,fill=reorder(RTs,-RT))) +
                 geom_area(col="black") +
+                geom_hline(yintercept=ml,col="red") +
                 # geom_text(data=TDC2,aes(y=total+10,label=format(JTime,"%H"),fill=NULL),col="red") +
                 labs(x="",y="",fill="") +
                 scale_x_datetime(date_breaks="1 min",date_labels = "%H:%M") +

@@ -61,6 +61,10 @@ if(!require(rsconnect))
     install.packages("rsconnect")
 library(rsconnect)
 
+if(!require(dygraphs))
+    install.packages("dygraphs")
+library(dygraphs)
+
 # Define UI for application that draws a histogram
 ui <- fluidPage(
 
@@ -80,6 +84,7 @@ ui <- fluidPage(
         # Show a plot of the generated distribution
         mainPanel(
            plotOutput("Hline"),
+           dygraphOutput("Hline2"),
            plotOutput("Dline0"),
            plotOutput("Dline"),
            plotOutput("Mline"),
@@ -97,6 +102,7 @@ server <- function(input, output) {
     TDC <- data.frame()
     dc=""
     wd="コロナ"
+    wd="雨"
     
     WD <- eventReactive(input$button1,{
         input$wd
@@ -230,6 +236,36 @@ server <- function(input, output) {
             plot(p)
     })
     
+    output$Hline2 <- renderDygraph({
+        TDCS <-
+            TDC %>%
+            mutate(RTs=factor(RT,labels = c("Origin","Retweet"))) %>%
+            select(JTime,RTs,n) %>%
+            spread(RTs,n) %>%
+            select(Retweet,Origin)
+        
+        # TDCS <-
+        #     TDC %>%
+        #     filter(!RT) %>%
+        #     select(Origin=n,Total=total)
+        
+        rownames(TDCS) <- unique(TDC$JTime)
+        
+        dygraph(TDCS) %>%
+            dyOptions(stackedGraph = T, drawPoints = T, pointSize = 1, strokeWidth = 2) %>%
+            dyRangeSelector(height = 100,keepMouseZoom = T,dateWindow = c(max(TDC$JTime)-60*61,max(TDC$JTime)-60)) %>%
+            # dyHighlight(highlightCircleSize = 3,
+            #             highlightSeriesBackgroundAlpha = 0.5,
+            #             highlightSeriesOpts=list(),
+            #             hideOnMouseOut = T) %>%
+            dyLegend(show = "always",
+                     width = 100,
+                     showZeroValues = TRUE, labelsDiv = NULL,
+                     labelsSeparateLines = T, hideOnMouseOut = TRUE) 
+        
+    })
+    
+    
     output$Dline0 <-  renderPlot({
         TDCH <-
             TDC %>%
@@ -315,7 +351,8 @@ server <- function(input, output) {
             ggtitle(paste0(min(TDC2$JTime),"～",max(TDC2$JTime))) +
             theme(legend.position = "bottom") +
             theme(text = element_text(size=30)) +
-            theme(axis.text.x =  element_text(size=20,angle = 90,vjust = 0.5)) +
+            # theme(axis.text.x =  element_text(size=30)) +
+            # theme(axis.text.x =  element_text(size=20,angle = 90,vjust = 0.5)) +
             theme(axis.title.x = element_blank())
         
         plot(p)

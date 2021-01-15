@@ -228,7 +228,7 @@ server <- function(input, output) {
         
         rownames(TDCS) <- unique(Comp$JTime)
         
-        dygraph(TDCS,main = paste0(min(TDC$JTime),"～",max(TDC$JTime))) %>%
+        dygraph(TDCS,main = paste0(max(TDC$JTime)-60*60,"～",max(TDC$JTime))) %>%
             dyOptions(stackedGraph = T, drawPoints = T, pointSize = 1, strokeWidth = 2,fillAlpha = 0.5,colors = c("red","blue"),
                       axisLabelFontSize = 30,axisLabelWidth = 100,titleHeight = 50,labelsKMB = T) %>%
             dyRangeSelector(height = 100,keepMouseZoom = T,dateWindow = c(max(TDC$JTime)-60*60,max(TDC$JTime))) %>%

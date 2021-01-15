@@ -65,6 +65,10 @@ if(!require(dygraphs))
     install.packages("dygraphs")
 library(dygraphs)
 
+if(!require(RMeCab))
+    install.packages("RMeCab", repos = "https://rmecab.jp/R") 
+library(RMeCab)
+
 # Define UI for application that draws a histogram
 ui <- fluidPage(
 
@@ -83,8 +87,9 @@ ui <- fluidPage(
 
         # Show a plot of the generated distribution
         mainPanel(
-           plotOutput("Hline"),
-           dygraphOutput("Hline2"),
+            dygraphOutput("Hdy"),
+            # plotOutput("ggraph"),
+           # plotOutput("Hline"),
            plotOutput("Dline0"),
            plotOutput("Dline"),
            plotOutput("Mline"),
@@ -123,7 +128,7 @@ server <- function(input, output) {
     if(file.exists("dc.txt"))
         dc <- as.character(fread("dc.txt")$V1)
     # print(Sys.time())
-    if(as.numeric(format(Sys.time(),"%S"))<50)
+    if(as.numeric(format(Sys.time(),"%S"))>10)
         return()
     print(Sys.time())
     # refreshPlot()
@@ -153,7 +158,9 @@ server <- function(input, output) {
         mutate(Minute=minute(JTime)) %>%
         mutate(M=floor(Minute/10)*10) %>%
         arrange(desc(status_id)) %>%
-        mutate(ID=paste0("Row",1:n()))
+        mutate(ID=paste0("Row",1:n())) %>% 
+        mutate(Tweet2=iconv(Tweet,from="UTF-8",to="CP932","")) %>%
+        data.frame()
     
     day=format(max(tds$JTime),"%Y%m%d_%H%M") #-24*60*60
     mid=max(tds$status_id)
@@ -187,7 +194,8 @@ server <- function(input, output) {
         mutate(total=sum(n)) %>%
         ungroup() %>%
         mutate(JTime=as.POSIXct(paste(Year,Month,Day,Hour,Minute),format="%Y %m %d %H %M")) %>%
-        filter(JTime<Sys.time())
+        filter(floor(as.numeric(JTime)/60)<floor(as.numeric(Sys.time())/60))
+    
     
     print(head(TDC %>% arrange(desc(JTime))))
     
@@ -198,47 +206,16 @@ server <- function(input, output) {
     
     # print(list.files("Tweet_data"))
     
-    output$Hline <-  renderPlot({
-        Comp <- 
-            # data.frame(JTime=(max(TDC$JTime)-60*60):(max(TDC$JTime))) %>%
-            data.frame(JTime=rep(seq(max(TDC$JTime)-60*61,max(TDC$JTime)-60,60),each=2),
-                       RT=rep(c(F,T),61))
-        TDC2 <-
+   output$Hdy <- renderDygraph({
+       Comp <- 
+           # data.frame(JTime=(max(TDC$JTime)-60*60):(max(TDC$JTime))) %>%
+           data.frame(JTime=rep(seq(min(TDC$JTime),max(TDC$JTime),60),each=2),
+                      RT=c(F,T))
+       
+        TDCS <-
             Comp %>%
             left_join(TDC) %>%
-            mutate(n=ifelse(is.na(n),0,n)) %>%
-            mutate(total=ifelse(is.na(total),0,total))
-        
-        keta <-nchar(max(TDC2$total))-1
-        
-        if(floor(max(TDC2$total)/(10^keta))<2)
-            keta <- keta-1
-        
-       ml=floor(max(TDC2$total)/(10^keta))*(10^keta)
-        
-            p <-
-                TDC2 %>%
-                # filter(total>0) %>%
-                mutate(RTs=factor(RT,labels = c("オリジナルツイート","リツイート"))) %>%
-                ggplot(aes(x=JTime,y=n,fill=reorder(RTs,-RT))) +
-                geom_area(col="black") +
-                geom_hline(yintercept=ml,col="red") +
-                # geom_text(data=TDC2,aes(y=total+10,label=format(JTime,"%H"),fill=NULL),col="red") +
-                labs(x="",y="",fill="") +
-                scale_x_datetime(date_breaks="1 min",date_labels = "%H:%M") +
-                scale_y_continuous(breaks = seq(0,10000000,10^keta),limits = c(0,max(TDC2$total)+10^(keta-1))) +
-                ggtitle(paste0(min(TDC2$JTime),"～",max(TDC2$JTime))) +
-                theme(legend.position = "bottom") +
-                theme(text = element_text(size=30)) +
-                theme(axis.text.x =  element_text(size=20,angle = 90,vjust = 0.5)) +
-                theme(axis.title.x = element_blank())
-            
-            plot(p)
-    })
-    
-    output$Hline2 <- renderDygraph({
-        TDCS <-
-            TDC %>%
+            complete(JTime,RT,fill=list(n=0)) %>%
             mutate(RTs=factor(RT,labels = c("Origin","Retweet"))) %>%
             select(JTime,RTs,n) %>%
             spread(RTs,n) %>%
@@ -249,22 +226,74 @@ server <- function(input, output) {
         #     filter(!RT) %>%
         #     select(Origin=n,Total=total)
         
-        rownames(TDCS) <- unique(TDC$JTime)
+        rownames(TDCS) <- unique(Comp$JTime)
         
-        dygraph(TDCS) %>%
-            dyOptions(stackedGraph = T, drawPoints = T, pointSize = 1, strokeWidth = 2) %>%
-            dyRangeSelector(height = 100,keepMouseZoom = T,dateWindow = c(max(TDC$JTime)-60*61,max(TDC$JTime)-60)) %>%
+        dygraph(TDCS,main = paste0(min(TDC$JTime),"～",max(TDC$JTime))) %>%
+            dyOptions(stackedGraph = T, drawPoints = T, pointSize = 1, strokeWidth = 2,fillAlpha = 0.5,colors = c("red","blue"),
+                      axisLabelFontSize = 30,axisLabelWidth = 100,titleHeight = 50,labelsKMB = T) %>%
+            dyRangeSelector(height = 100,keepMouseZoom = T,dateWindow = c(max(TDC$JTime)-60*60,max(TDC$JTime))) %>%
             # dyHighlight(highlightCircleSize = 3,
             #             highlightSeriesBackgroundAlpha = 0.5,
             #             highlightSeriesOpts=list(),
             #             hideOnMouseOut = T) %>%
-            dyLegend(show = "always",
-                     width = 100,
-                     showZeroValues = TRUE, labelsDiv = NULL,
-                     labelsSeparateLines = T, hideOnMouseOut = TRUE) 
+            # dyLegend(show = "always",
+            #          width = 100,
+            #          showZeroValues = TRUE, labelsDiv = NULL,
+            #          labelsSeparateLines = T, hideOnMouseOut = TRUE) 
+            dyLegend(width = 175)
         
     })
-    
+   Encoding(tds$Tweet) <- "cp932"
+   Encoding(TDS$Tweet)
+   te <- iconv(tds$Tweet,from="UTF-8",to="cp932","")
+   
+    output$ggraph <- renderPlot({
+        TDS <- fread(paste0("Tweet_data/Tweet_",wd,"_",day,"_",mid,".csv"))
+        
+        TF0 <- docDF(tds, col = 100, type = 1, N = 1, minFreq = 1, nDF = 1,
+                     pos = c("感動詞","形容詞","動詞","副詞","名詞","接頭詞","連体詞"))
+        
+        TF0S <-
+            TF0 %>%
+            gather(ID,n,starts_with("Row")) %>%
+            filter(n>0) %>%
+            count(N1,POS1,POS2) %>%
+            mutate(CF=N1>=0) %>%
+            filter(!CF)
+            
+        
+        TF1 <- docDF(tds, col = 100, type = 1, N = 3, minFreq = 1, nDF = 1,
+                     pos = c("感動詞","形容詞","動詞","副詞","名詞","接頭詞","連体詞"))
+        
+        TF1S <-
+            TF1 %>%
+            gather(ID,n,starts_with("Row")) %>%
+            filter(n>0) %>%
+            mutate_at(vars(N1,N2,N3),funs(ifelse(. %in% TF0S$N1,"",.))) %>%
+            filter(N1!="") %>%
+            left_join(tds %>% select(Tweet,one_of(colnames(tds)))) %>%
+            mutate(word=ifelse(grepl("^接頭詞-名詞-",POS1),paste0(N1,N2),N1)) %>%
+            mutate(word=ifelse(grepl("^名詞-名詞-",POS1) & grepl("^[[:alnum:]]+-接尾-",POS2) & 
+                                   !grepl("^記号-接尾-",POS2) & nchar(N2)<3,paste0(N1,N2),word)) %>%
+            mutate(word=ifelse(grepl("^接頭詞-名詞-名詞",POS1) & grepl("^[[:alnum:]]+-[[:alnum:]]+-接尾",POS2) & 
+                                   !grepl("^[[:alnum:]]+-記号-接尾",POS2) & nchar(N3)<3,paste0(N1,N2,N3),word)) %>%
+            mutate(word=ifelse(grepl("^名詞-名詞-名詞",POS1) & grepl("^[[:alnum:]]+-接尾-接尾",POS2) & 
+                                   !grepl("^記号-接尾-接尾",POS2) & nchar(N3)<3,paste0(N1,N2,N3),word)) %>%
+            mutate(word=ifelse(grepl("^名詞-名詞-名詞",POS1) & grepl("^数-数-接尾",POS2) & nchar(N3)<3,paste0(N1,N2,N3),word)) %>%
+            mutate(word=ifelse(grepl("^名詞-名詞-名詞",POS1) & grepl("^数-数-数",POS2),paste0(N1,N2,N3),word)) %>%
+            mutate(word=ifelse(grepl("^名詞-名詞-名詞",POS1) & grepl("^数-記号-数",POS2),paste0(N1,N2,N3),word)) %>%
+            select(N1,N2,N3,POS1,POS2,word,one_of(colnames(.)))
+        
+        TF1S2 <-
+            TF1S %>%
+            group_by(word) %>% #,POS1,POS2
+            summarise(Freq=sum(n)) %>%
+            ungroup() %>%
+            mutate(Rank=frank(-Freq,ties.method="dense")) %>%
+            arrange(Rank)
+        
+        print(head(TF1S))
+    })
     
     output$Dline0 <-  renderPlot({
         TDCH <-

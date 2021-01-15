@@ -243,11 +243,13 @@ server <- function(input, output) {
             dyLegend(width = 175)
         
     })
-   Encoding(tds$Tweet) <- "cp932"
-   Encoding(TDS$Tweet)
-   te <- iconv(tds$Tweet,from="UTF-8",to="cp932","")
+   
    
     output$ggraph <- renderPlot({
+        # Encoding(tds$Tweet) <- "cp932"
+        # Encoding(TDS$Tweet)
+        # te <- iconv(tds$Tweet,from="UTF-8",to="cp932","")
+        
         TDS <- fread(paste0("Tweet_data/Tweet_",wd,"_",day,"_",mid,".csv"))
         
         TF0 <- docDF(tds, col = 100, type = 1, N = 1, minFreq = 1, nDF = 1,

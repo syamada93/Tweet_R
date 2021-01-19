@@ -91,8 +91,8 @@ ui <- fluidPage(
             # plotOutput("ggraph"),
            # plotOutput("Hline"),
            plotOutput("Dline0"),
-           plotOutput("Dline"),
-           plotOutput("Mline"),
+           # plotOutput("Dline"),
+           # plotOutput("Mline"),
            width = 12
         )
     )
@@ -228,10 +228,10 @@ server <- function(input, output) {
         
         rownames(TDCS) <- unique(Comp$JTime)
         
-        dygraph(TDCS,main = paste0(max(TDC$JTime)-60*60,"～",max(TDC$JTime))) %>%
+        dygraph(TDCS,main = paste0(max(TDC$JTime)-2*60*60,"～",max(TDC$JTime))) %>%
             dyOptions(stackedGraph = T, drawPoints = T, pointSize = 1, strokeWidth = 2,fillAlpha = 0.5,colors = c("red","blue"),
                       axisLabelFontSize = 30,axisLabelWidth = 100,titleHeight = 50,labelsKMB = T) %>%
-            dyRangeSelector(height = 100,keepMouseZoom = T,dateWindow = c(max(TDC$JTime)-60*60,max(TDC$JTime))) %>%
+            dyRangeSelector(height = 100,keepMouseZoom = T,dateWindow = c(max(TDC$JTime)-2*60*60,max(TDC$JTime))) %>%
             # dyHighlight(highlightCircleSize = 3,
             #             highlightSeriesBackgroundAlpha = 0.5,
             #             highlightSeriesOpts=list(),

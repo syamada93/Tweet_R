@@ -128,7 +128,7 @@ server <- function(input, output) {
     if(file.exists("dc.txt"))
         dc <- as.character(fread("dc.txt")$V1)
     # print(Sys.time())
-    if(as.numeric(format(Sys.time(),"%S"))>10)
+    if(as.numeric(format(Sys.time(),"%S"))>5)
         return()
     print(Sys.time())
     # refreshPlot()
